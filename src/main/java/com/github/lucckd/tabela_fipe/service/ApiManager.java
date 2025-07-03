@@ -7,12 +7,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class ApiManager {
-
-    private static String url = "https://parallelum.com.br/fipe/api/v1/";
+    //public static String consultarApi = "";
     HttpClient client = HttpClient.newHttpClient();
 
-    public String requisicao(String endereco) {
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url + endereco)).build();
+    public String requisicao(String url) {
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
 
         HttpResponse<String> response = null;
 

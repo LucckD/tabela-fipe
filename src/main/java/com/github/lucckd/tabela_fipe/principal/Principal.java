@@ -1,6 +1,7 @@
 package com.github.lucckd.tabela_fipe.principal;
 
 import com.github.lucckd.tabela_fipe.model.DadosCarros;
+import com.github.lucckd.tabela_fipe.model.DadosModelos;
 import com.github.lucckd.tabela_fipe.service.ApiManager;
 import com.github.lucckd.tabela_fipe.service.ConverteDados;
 
@@ -12,6 +13,12 @@ import static com.github.lucckd.tabela_fipe.helper.InputManager.*;
 public class Principal {
     private ApiManager consumo = new ApiManager();
     private ConverteDados conversor = new ConverteDados();
+    private String url_BASE = "https://parallelum.com.br/fipe/api/v1/";
+    private String urlFinal;
+    private String tipoVeiculo;
+    private Integer urlMarcas;
+    private String textoModelos = "/modelos/";
+    private String textoMarcas = "/marcas/";
 
     public void menu() {
         System.out.print("""
@@ -21,11 +28,13 @@ public class Principal {
                 3- Caminhão
                 
                 Digite uma das opções para consultar valores:  """);
-        escolha();
+        escolhaVeiculo();
+
+        System.out.println("\nDigite o código ou a marca que deseja consultar");
+        consultaModelos();
     }
 
-    public void escolha() {
-
+    public void escolhaVeiculo() {
         List<String> opcao = List.of("Caminhão", "Carro", "Moto");
         var entrada = text();
 
@@ -67,10 +76,23 @@ public class Principal {
     }
 
     private void consultaMarcas(String veiculo) {
-        var json = consumo.requisicao(veiculo + "/marcas/");
+        tipoVeiculo = veiculo;
+        urlFinal = url_BASE + tipoVeiculo + textoMarcas;
+        var json = consumo.requisicao(urlFinal);
         var marcas = conversor.obterLista(json, DadosCarros.class);
         System.out.println("\n--- Marcas disponíveis ---");
         marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+
+    }
+
+    private void consultaModelos() {
+        //metodo para pegar carro por escrita também?
+        urlMarcas = inputInt();
+        urlFinal = url_BASE + tipoVeiculo + textoMarcas + urlMarcas + textoModelos;
+        var json = consumo.requisicao(urlFinal);
+        DadosModelos resultado = conversor.obterDados(json, DadosModelos.class);
+        System.out.println("\n--- Modelos disponíveis ---");
+        resultado.modelos().forEach(m -> System.out.println(m.codigo() + " - " + m.nome()) );
     }
 
 }

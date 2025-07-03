@@ -1,0 +1,76 @@
+package com.github.lucckd.tabela_fipe.principal;
+
+import com.github.lucckd.tabela_fipe.model.DadosCarros;
+import com.github.lucckd.tabela_fipe.service.ApiManager;
+import com.github.lucckd.tabela_fipe.service.ConverteDados;
+
+import java.util.List;
+import java.util.Optional;
+
+import static com.github.lucckd.tabela_fipe.helper.InputManager.*;
+
+public class Principal {
+    private ApiManager consumo = new ApiManager();
+    private ConverteDados conversor = new ConverteDados();
+
+    public void menu() {
+        System.out.print("""
+                --- Menu --\n
+                1- Carro
+                2- Moto
+                3- Caminhão
+                
+                Digite uma das opções para consultar valores:  """);
+        escolha();
+    }
+
+    public void escolha() {
+
+        List<String> opcao = List.of("Caminhão", "Carro", "Moto");
+        var entrada = text();
+
+        Optional<String> resultado = opcao.stream()
+                .filter(e -> e.toLowerCase().startsWith(entrada.toLowerCase()))
+                .findFirst();
+
+        if (resultado.isPresent()) {
+            switch (resultado.get()) {
+                case "Carro" -> {
+                    System.out.println("Vamos consultar Carros!");
+                    consultaMarcas("carros");
+                }
+                case "Moto" -> {
+                    System.out.println("Vamos consultar Motos!");
+                    consultaMarcas("motos");
+                }
+                case "Caminhão" -> {
+                    System.out.println("Vamos consultar Caminhões!");
+                    consultaMarcas("caminhoes");
+                }
+            }
+        } else {
+            if (entrada.startsWith("car")) {
+                System.out.println("Você quis dizer carro.");
+                consultaMarcas("carros");
+            } else if (entrada.startsWith("cam")) {
+                System.out.println("Você quis dizer caminhão.");
+                consultaMarcas("caminhoes");
+            } else if (entrada.startsWith("m")) {
+                System.out.println("Você quis dizer moto.");
+                consultaMarcas("motos");
+            } else {
+                System.out.println("Nada encontrado. Tente novamente.");
+                menu();
+            }
+        }
+
+    }
+
+    private void consultaMarcas(String veiculo) {
+        var json = consumo.requisicao(veiculo + "/marcas/");
+        var marcas = conversor.obterLista(json, DadosCarros.class);
+        System.out.println("\n--- Marcas disponíveis ---");
+        marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+    }
+
+}

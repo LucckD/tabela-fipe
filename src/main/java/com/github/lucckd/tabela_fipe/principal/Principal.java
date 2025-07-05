@@ -2,11 +2,14 @@ package com.github.lucckd.tabela_fipe.principal;
 
 import com.github.lucckd.tabela_fipe.model.DadosCarros;
 import com.github.lucckd.tabela_fipe.model.DadosModelos;
+import com.github.lucckd.tabela_fipe.model.DadosAnos;
+import com.github.lucckd.tabela_fipe.model.DadosValor;
 import com.github.lucckd.tabela_fipe.service.ApiManager;
 import com.github.lucckd.tabela_fipe.service.ConverteDados;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.github.lucckd.tabela_fipe.helper.InputManager.*;
 
@@ -17,8 +20,10 @@ public class Principal {
     private String urlFinal;
     private String tipoVeiculo;
     private Integer urlMarcas;
-    private String textoModelos = "/modelos/";
-    private String textoMarcas = "/marcas/";
+    private Integer urlModelo;
+    private String MODELOS = "/modelos/";
+    private String MARCAS = "/marcas/";
+
 
     public void menu() {
         System.out.print("""
@@ -30,8 +35,9 @@ public class Principal {
                 Digite uma das opções para consultar valores:  """);
         escolhaVeiculo();
 
-        System.out.println("\nDigite o código ou a marca que deseja consultar");
         consultaModelos();
+
+        consultaAnos();
     }
 
     public void escolhaVeiculo() {
@@ -76,27 +82,82 @@ public class Principal {
     }
 
     private void consultaMarcas(String veiculo) {
-            tipoVeiculo = veiculo;
-            urlFinal = url_BASE + tipoVeiculo + textoMarcas;
-            var json = consumo.requisicao(urlFinal);
-            var marcas = conversor.obterLista(json, DadosCarros.class);
-            System.out.println("\n--- Marcas disponíveis ---");
-            marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+        tipoVeiculo = veiculo;
+        urlFinal = url_BASE + tipoVeiculo + MARCAS;
+        var json = consumo.requisicao(urlFinal);
+        var marcas = conversor.obterLista(json, DadosCarros.class);
+        System.out.println("\n--- Marcas disponíveis ---");
+        marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+        System.out.println("\nDigite o código da marca que deseja consultar");
     }
 
     private void consultaModelos() {
-        //metodo para pegar carro por escrita também?
-        urlMarcas = inputInt();
-        urlFinal = url_BASE + tipoVeiculo + textoMarcas + urlMarcas + textoModelos;
-        var json = consumo.requisicao(urlFinal);
-        DadosModelos resultado = conversor.obterDados(json, DadosModelos.class);
+        DadosModelos resultado;
 
-        if (resultado.modelos() == null) {
-            System.out.println("\nNada encontrado, tente novamente.");
-            consultaModelos();
-        } else {
-            System.out.println("\n--- Modelos disponíveis ---\n");
-            resultado.modelos().forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+        while (true) {
+            urlMarcas = inputInt();
+            urlFinal = url_BASE + tipoVeiculo + MARCAS + urlMarcas + MODELOS;
+            var json = consumo.requisicao(urlFinal);
+            resultado = conversor.obterDados(json, DadosModelos.class);
+
+            if (resultado.modelos() != null && !resultado.modelos().isEmpty()) {
+                break;
+            } else {
+                System.out.println("\nNada encontrado. Tente novamente.");
+            }
+        }
+
+        System.out.println("\n--- Modelos disponíveis ---\n");
+        resultado.modelos().forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+
+        while (true) {
+            System.out.println("\nDigite um trecho do modelo que deseja encontrar.");
+            String modeloBusca = text();
+
+            List<DadosCarros> modelosFiltrados = resultado.modelos().stream()
+                    .filter(m -> m.nome().toLowerCase().contains(modeloBusca.toLowerCase()))
+                    .collect(Collectors.toList());
+
+            if (modelosFiltrados.isEmpty()) {
+                System.out.println("\nNenhum modelo encontrado com esse trecho.");
+            } else {
+                System.out.println("\n--- Modelos encontrados ---\n");
+                modelosFiltrados.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+                break;
+            }
+        }
+    }
+
+    private void consultaAnos() {
+        System.out.println("\nDigite o código do modelo que deseja consultar");
+        urlModelo = inputInt();
+        urlFinal = url_BASE + tipoVeiculo + MARCAS + urlMarcas + MODELOS + urlModelo + "/anos/";
+        var json = consumo.requisicao(urlFinal);
+        var modelosAno = conversor.obterLista(json, DadosAnos.class);
+
+        System.out.println("\n--- Valores ---\n");
+
+        for (DadosAnos ano : modelosAno) {
+            String urlDadosValores = url_BASE + tipoVeiculo + MARCAS + urlMarcas + MODELOS + urlModelo + "/anos/" + ano.codigo();
+            var jsonAno = consumo.requisicao(urlDadosValores);
+
+            var dados = conversor.obterDados(jsonAno, DadosValor.class);
+
+            if (dados.AnoModelo().length() > 4) {
+                System.out.println("Marca: " + dados.Marca());
+                System.out.println("Modelo: " + dados.Modelo());
+                System.out.println("Ano: Indisponível");
+                System.out.println("Valor: " + dados.Valor());
+                System.out.println("Mês de Referência: " + dados.MesReferencia());
+                System.out.println("\n--------\n");
+            } else {
+                System.out.println("Marca: " + dados.Marca());
+                System.out.println("Modelo: " + dados.Modelo());
+                System.out.println("Ano: " + dados.AnoModelo());
+                System.out.println("Valor: " + dados.Valor());
+                System.out.println("Mês de Referência: " + dados.MesReferencia());
+                System.out.println("\n--------\n");
+            }
         }
     }
 

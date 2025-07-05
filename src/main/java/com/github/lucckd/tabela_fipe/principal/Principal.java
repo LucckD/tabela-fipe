@@ -13,7 +13,7 @@ import static com.github.lucckd.tabela_fipe.helper.InputManager.*;
 public class Principal {
     private ApiManager consumo = new ApiManager();
     private ConverteDados conversor = new ConverteDados();
-    private String url_BASE = "https://parallelum.com.br/fipe/api/v1/";
+    private static final String url_BASE = "https://parallelum.com.br/fipe/api/v1/";
     private String urlFinal;
     private String tipoVeiculo;
     private Integer urlMarcas;
@@ -45,30 +45,30 @@ public class Principal {
         if (resultado.isPresent()) {
             switch (resultado.get()) {
                 case "Carro" -> {
-                    System.out.println("Vamos consultar Carros!");
+                    System.out.println("\nVamos consultar Carros!");
                     consultaMarcas("carros");
                 }
                 case "Moto" -> {
-                    System.out.println("Vamos consultar Motos!");
+                    System.out.println("\nVamos consultar Motos!");
                     consultaMarcas("motos");
                 }
                 case "Caminhão" -> {
-                    System.out.println("Vamos consultar Caminhões!");
+                    System.out.println("\nVamos consultar Caminhões!");
                     consultaMarcas("caminhoes");
                 }
             }
         } else {
             if (entrada.startsWith("car")) {
-                System.out.println("Você quis dizer carro.");
+                System.out.println("\nVocê quis dizer carro.");
                 consultaMarcas("carros");
             } else if (entrada.startsWith("cam")) {
-                System.out.println("Você quis dizer caminhão.");
+                System.out.println("\nVocê quis dizer caminhão.");
                 consultaMarcas("caminhoes");
             } else if (entrada.startsWith("m")) {
-                System.out.println("Você quis dizer moto.");
+                System.out.println("\nVocê quis dizer moto.");
                 consultaMarcas("motos");
             } else {
-                System.out.println("Nada encontrado. Tente novamente.");
+                System.out.println("\nNada encontrado. Tente novamente.\n");
                 menu();
             }
         }
@@ -76,13 +76,12 @@ public class Principal {
     }
 
     private void consultaMarcas(String veiculo) {
-        tipoVeiculo = veiculo;
-        urlFinal = url_BASE + tipoVeiculo + textoMarcas;
-        var json = consumo.requisicao(urlFinal);
-        var marcas = conversor.obterLista(json, DadosCarros.class);
-        System.out.println("\n--- Marcas disponíveis ---");
-        marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
-
+            tipoVeiculo = veiculo;
+            urlFinal = url_BASE + tipoVeiculo + textoMarcas;
+            var json = consumo.requisicao(urlFinal);
+            var marcas = conversor.obterLista(json, DadosCarros.class);
+            System.out.println("\n--- Marcas disponíveis ---");
+            marcas.forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
     }
 
     private void consultaModelos() {
@@ -91,8 +90,14 @@ public class Principal {
         urlFinal = url_BASE + tipoVeiculo + textoMarcas + urlMarcas + textoModelos;
         var json = consumo.requisicao(urlFinal);
         DadosModelos resultado = conversor.obterDados(json, DadosModelos.class);
-        System.out.println("\n--- Modelos disponíveis ---");
-        resultado.modelos().forEach(m -> System.out.println(m.codigo() + " - " + m.nome()) );
+
+        if (resultado.modelos() == null) {
+            System.out.println("\nNada encontrado, tente novamente.");
+            consultaModelos();
+        } else {
+            System.out.println("\n--- Modelos disponíveis ---\n");
+            resultado.modelos().forEach(m -> System.out.println(m.codigo() + " - " + m.nome()));
+        }
     }
 
 }
